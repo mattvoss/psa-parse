@@ -68,5 +68,10 @@ loop = function(i) {
 
 letter = program.letter || letter;
 start = parseInt(program.start) || start;
-var stream = fs.createWriteStream(letter+'00000.csv');
+var stream = fs.createWriteStream(
+    letter+'00000.csv',
+    {
+        'flags': 'a'
+    }
+);
 loop(start);
