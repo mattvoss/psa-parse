@@ -43,9 +43,7 @@ loop = function(i) {
                             function(errors, window) {
                                 var rows = window.$.find('.cert-details p');
                                 console.log(newUrl, letter + number, window.$(rows[0]).text(),  window.$(rows[1]).text());
-                                csv().to(stream)
-                                .write(["'"+window.$(rows[0]).text()+"'", "'"+window.$(rows[1]).text()+"'", "'"+letter + number+"'"]);
-                                stream.write("\r\n");
+                                stream.write("'"+window.$(rows[0]).text()+"','"+window.$(rows[1]).text()+"','"+letter + number+"' \r\n");
                                 loop(i + 1);
                             }
 
