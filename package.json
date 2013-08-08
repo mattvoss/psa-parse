@@ -6,6 +6,7 @@
     "keywords": [ ],
     "dependencies": {
         "querystring": "latest",
+        "async": "latest",
         "request": "latest",
         "cheerio": "latest",
         "commander": "latest",

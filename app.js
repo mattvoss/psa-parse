@@ -1,6 +1,8 @@
 var querystring = require('querystring');
     fs = require('fs'),
     cheerio = require('cheerio'),
+    request = require('request'),
+    async = require('async'),
     program  = require('commander'),
     url = 'http://www.psacard.com/DNACert/',
     default_headers = {
@@ -14,57 +16,47 @@ var querystring = require('querystring');
     },
     letter = "A",
     start = 0,
-    end = 99999;
+    end = 99999,
+    q = async.queue(function (task, callback) {
+        var newUrl = url + task.cert;
+        console.log('URL: ' + newUrl);
+
+        try {
+            request.get({url:newUrl}, function (e, response, body) {
+                if (!e) {
+                    $ = cheerio.load(body);
+                    var rows = $('.cert-details').find('p');
+                    if (rows) {
+
+                        console.log(rows.eq(0).text(), rows.eq(1).text(), task.cert);
+                        stream.write("'"+rows.eq(0).text()+"','"+rows.eq(1).text()+"','"+task.cert+"' \r\n");
+                        rows = null;
+                        callback();
+                    } else {
+                        callback();
+                    }
+
+                } else {
+                    callback();
+                }
+            });
+        } catch(err) {
+            callback();
+        }
+
+    }, 4);
+
+// assign a callback
+q.drain = function() {
+    console.log('all items have been processed');
+    stream.end();
+}
 
 program
   .version('0.0.1')
   .option('-l, --letter [value]', 'Letter at beginning of authenticity number')
   .option('-s, --start [value]', 'Optional starting point other than zero')
   .parse(process.argv);
-
-loop = function(i) {
-    if (i <= end) {
-        var request = require('request'),
-            str = "" + i,
-            pad = "00000",
-            number = pad.substring(0, pad.length - str.length) + str,
-            newUrl = url + letter + number
-        console.log('URL: ' + newUrl);
-
-        try {
-            request.get({url:newUrl, timeout:3000}, function (e, response, body) {
-                if (!e) {
-                    $ = cheerio.load(body);
-                    var rows = $('.cert-details').find('p');
-                    if (rows) {
-
-                        console.log(rows.eq(0).text(), rows.eq(1).text(), letter + number);
-                        stream.write("'"+rows.eq(0).text()+"','"+rows.eq(1).text()+"','"+letter + number+"' \r\n");
-                        table = null;
-                        rows = null;
-                        request = null;
-                        jsdom = null;
-                        process.nextTick(function() {loop(i + 1)});
-                    } else {
-                        table = null;
-                        jsdom = null;
-                        request = null;
-                        process.nextTick(function() {loop(i + 1)});
-                    }
-
-                } else {
-                    request = null;
-                    process.nextTick(function() {loop(i + 1)});
-                }
-            });
-        } catch(err) {
-            request = null;
-            process.nextTick(function() {loop(i + 1)});
-        }
-    } else {
-        stream.end();
-    }
-}
 
 letter = program.letter || letter;
 start = parseInt(program.start) || start;
@@ -74,4 +66,20 @@ var stream = fs.createWriteStream(
         'flags': 'a'
     }
 );
-loop(start);
+for (var i=0; i<(end-start)/2; i++) {
+    var lstr = "" + (start+i),
+        rstr = "" + (end-i),
+        pad = "00000",
+        lnumber = pad.substring(0, pad.length - lstr.length) + lstr,
+        rnumber = pad.substring(0, pad.length - rstr.length) + rstr,
+        lcert = letter + lnumber,
+        rcert = letter + rnumber;
+
+    q.push({cert: lcert}, function (err) {
+        //console.log('finished processing:', cert);
+    });
+
+    q.push({cert: rcert}, function (err) {
+        //console.log('finished processing:', cert);
+    });
+}
