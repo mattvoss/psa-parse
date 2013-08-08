@@ -23,3 +23,18 @@ Options
 Output
 ======
 It writes data to a csv file in the directory of the app using the naming format of {letter}00000.csv
+
+The CSV has this format:
+
+```
+'Item: Program','Primary Subject: MICKEY MANTLE','O00000'
+'Item: Magazine','Primary Subject: WILT CHAMBERLAIN','O00001'
+'Item: Photograph','Primary Subject: WILT CHAMBERLAIN','O00002'
+'Item: Contract','Primary Subject: WILT CHAMBERLAIN','O00003'
+'Item: Photograph','Primary Subject: JIMMIE FOXX','O00004'
+'Item: Photograph','Primary Subject: HONUS WAGNER','O00005'
+'Item: Litho','Primary Subject: MICHAEL JORDAN','O00006'
+'Item: Photograph','Primary Subject: TY COBB','O00007'
+'Item: Magazine','Primary Subject: MUHAMMAD ALI','O00009'
+'Item: AUTOGRAPH ITEM','Primary Subject: MUHAMMAD ALI','O00012'
+```

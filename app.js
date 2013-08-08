@@ -1,9 +1,7 @@
 var querystring = require('querystring');
     fs = require('fs'),
-    request = require('request'),
-    jsdom = require("jsdom"),
+    cheerio = require('cheerio'),
     program  = require('commander'),
-    csv = require('csv'),
     url = 'http://www.psacard.com/DNACert/',
     default_headers = {
       'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.34 Safari/536.11',
@@ -26,40 +24,42 @@ program
 
 loop = function(i) {
     if (i <= end) {
-        var str = "" + i,
+        var request = require('request'),
+            str = "" + i,
             pad = "00000",
             number = pad.substring(0, pad.length - str.length) + str,
             newUrl = url + letter + number
         console.log('URL: ' + newUrl);
 
         try {
-            request.get({url:newUrl}, function (e, response, body) {
-                jsdom.env(
-                    body,
-                    ['jquery-1.10.2.min.js'],
-                    function(errors, window) {
-                        var table = window.$("body .result-table").html();
-                        if (table) {
-                            jsdom.env(
-                                table,
-                                ['jquery-1.10.2.min.js'],
-                                function(errors, window) {
-                                    var rows = window.$.find('.cert-details p');
-                                    console.log(newUrl, letter + number, window.$(rows[0]).text(),  window.$(rows[1]).text());
-                                    stream.write("'"+window.$(rows[0]).text()+"','"+window.$(rows[1]).text()+"','"+letter + number+"' \r\n");
-                                    loop(i + 1);
-                                }
+            request.get({url:newUrl, timeout:3000}, function (e, response, body) {
+                if (!e) {
+                    $ = cheerio.load(body);
+                    var rows = $('.cert-details').find('p');
+                    if (rows) {
 
-                            );
-                        } else {
-                            loop(i + 1);
-                        }
+                        console.log(rows.eq(0).text(), rows.eq(1).text(), letter + number);
+                        stream.write("'"+rows.eq(0).text()+"','"+rows.eq(1).text()+"','"+letter + number+"' \r\n");
+                        table = null;
+                        rows = null;
+                        request = null;
+                        jsdom = null;
+                        process.nextTick(function() {loop(i + 1)});
+                    } else {
+                        table = null;
+                        jsdom = null;
+                        request = null;
+                        process.nextTick(function() {loop(i + 1)});
                     }
-                );
 
+                } else {
+                    request = null;
+                    process.nextTick(function() {loop(i + 1)});
+                }
             });
         } catch(err) {
-            loop(i + 1);
+            request = null;
+            process.nextTick(function() {loop(i + 1)});
         }
     } else {
         stream.end();

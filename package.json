@@ -7,7 +7,7 @@
     "dependencies": {
         "querystring": "latest",
         "request": "latest",
-        "jsdom": "latest",
+        "cheerio": "latest",
         "commander": "latest",
         "csv": "latest"
     }
